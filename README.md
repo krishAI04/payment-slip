@@ -10,6 +10,14 @@ A small, session-only Excel-to-PDF utility. It reads the supplied FORM-XVII work
 4. In `frontend`, run `npm install` then `npm run dev`.
 5. Open the shown Vite URL and upload an `.xlsx` or legacy `.xls` file.
 
+## Deploy to Render
+
+1. Push this repository to GitHub.
+2. In Render, choose **New +** → **Blueprint** and select the repository.
+3. Render reads `render.yaml`, builds the React frontend, installs the Python API, and deploys one web service.
+
+The deployed app serves both the frontend and `/api` from the same URL, so no environment variables or CORS configuration are needed.
+
 ## Workbook mapping
 
 The parser finds each `FORM-XVII` section and uses its local heading area for Work Order, establishment, location, work description, and wage period. It reads employee rows by the visible table columns: Name of Employee, Designation, No. of days worked, Daily rate, Basic Wages, Special Reward, Total, PF, ESIC, Total deductions, and Net Amount Paid.

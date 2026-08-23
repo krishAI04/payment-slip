@@ -9,6 +9,7 @@ from pathlib import Path
 from fastapi import FastAPI, File, HTTPException, Query, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
+from fastapi.staticfiles import StaticFiles
 
 from .parser import PaymentSlip, ValidationError, parse_workbook
 from .pdfs import build_work_order_pdf
@@ -89,3 +90,6 @@ async def work_order_pdf(work_order: str = Query(...), file: UploadFile = File(.
 
 def safe_filename(value: str) -> str:
     return re.sub(r'[<>:"/\\|?*]+', "-", value).strip(" .-") or "work-order"
+
+
+app.mount("/", StaticFiles(directory=Path(__file__).resolve().parents[2] / "frontend" / "dist", html=True, check_dir=False), name="frontend")
