@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import io
-from decimal import Decimal
+from decimal import Decimal, ROUND_HALF_UP
 
 from reportlab.lib.colors import HexColor
 from reportlab.lib.pagesizes import A4
@@ -20,7 +20,8 @@ SLIP_GAP = 4 * mm
 
 
 def currency(value: Decimal) -> str:
-    return f"Rs. {money(value)}"
+    rounded = value.quantize(Decimal("1"), rounding=ROUND_HALF_UP)
+    return f"Rs. {money(rounded)}"
 
 
 def draw_label_value(c, x, y, label, value, bold=False, size=10.5):

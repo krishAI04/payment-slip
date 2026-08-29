@@ -1,12 +1,17 @@
+from decimal import Decimal
 from pathlib import Path
 from unittest import TestCase
 
 from app.parser import parse_workbook
-from app.pdfs import build_work_order_pdf
+from app.pdfs import build_work_order_pdf, currency
 from app.main import app, make_outputs
 
 
 class SuppliedWorkbookTests(TestCase):
+    def test_pdf_amounts_round_to_whole_rupees(self):
+        self.assertEqual(currency(Decimal("1326.49")), "Rs. 1,326")
+        self.assertEqual(currency(Decimal("1326.50")), "Rs. 1,327")
+
     def test_groups_records_and_builds_pdf(self):
         sample = Path(r"C:\Users\hp\Downloads\july-2026.xlsx")
         if not sample.exists():
