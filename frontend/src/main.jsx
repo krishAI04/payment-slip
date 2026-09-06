@@ -2,7 +2,7 @@ import { StrictMode, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import './styles.css';
 
-const API = 'http://localhost:8000/api';
+const API = window.location.hostname === 'localhost' ? 'http://localhost:8000/api' : '/api';
 const download = (blob, name) => { const url = URL.createObjectURL(blob); Object.assign(document.createElement('a'), { href: url, download: name }).click(); URL.revokeObjectURL(url); };
 
 function App() {
