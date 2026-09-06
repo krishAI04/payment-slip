@@ -24,3 +24,11 @@ class SuppliedWorkbookTests(TestCase):
         outputs = make_outputs(slips)
         self.assertEqual(len(outputs), 10)
         self.assertTrue(all(pdf.startswith(b"%PDF") for pdf in outputs.values()))
+
+    def test_na_deduction_totals_are_treated_as_zero(self):
+        sample = Path(r"C:\Users\hp\Downloads\Book1.xlsx")
+        if not sample.exists():
+            self.skipTest("The supplied Book1 workbook is unavailable.")
+        slips = parse_workbook(sample.read_bytes())
+        supervisor = next(slip for slip in slips if slip.employee == "PRIYANSHU VISHWAKARMA")
+        self.assertEqual(supervisor.total_deduction, Decimal("0"))

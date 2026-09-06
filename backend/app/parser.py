@@ -101,7 +101,7 @@ def parse_workbook(content: bytes) -> list[PaymentSlip]:
                 total = number(worksheet.cell(row, 8).value, row, "Total Pay")
                 pf = number(worksheet.cell(row, 9).value or 0, row, "PF deduction", allow_na=True)
                 esic = number(worksheet.cell(row, 10).value or 0, row, "ESIC deduction", allow_na=True)
-                deduction = number(worksheet.cell(row, 11).value, row, "Total deduction")
+                deduction = number(worksheet.cell(row, 11).value or 0, row, "Total deduction", allow_na=True)
                 net = number(worksheet.cell(row, 12).value, row, "Net Amount Paid")
                 slips.append(PaymentSlip(row, work_order, employee, clean(worksheet.cell(row, 3).value), number(worksheet.cell(row, 4).value, row, "days worked"), number(worksheet.cell(row, 5).value, row, "daily rate"), basic, reward, total, pf, esic, deduction, net, wage_period, establishment, location, nature))
             except ValidationError:
