@@ -10,11 +10,12 @@ function App() {
   const [file, setFile] = useState();
   const [info, setInfo] = useState();
   const [bonusOrders, setBonusOrders] = useState({});
+  const [zip, setZip] = useState();
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
 
   async function inspect(next) {
-    setError(''); setInfo(); setBonusOrders({});
+    setError(''); setInfo(); setBonusOrders({}); setZip();
     if (!next) return;
     if (!/\.xls(x)?$/i.test(next.name)) return setError('Choose an Excel .xlsx or .xls file.');
     setFile(next); setBusy(true);
@@ -33,7 +34,7 @@ function App() {
     try {
       const response = await fetch(`${API}/generate`, { method: 'POST', body });
       if (!response.ok) { const data = await response.json(); throw new Error(data.detail?.message || data.detail || 'Generation failed.'); }
-      download(await response.blob(), 'payment_slips.zip');
+      setZip(await response.blob());
     } catch (event) { setError(event.message); } finally { setBusy(false); }
   }
 
@@ -46,7 +47,7 @@ function App() {
     } catch (event) { setError(event.message); } finally { setBusy(false); }
   }
 
-  return <main><section className="hero"><p className="eyebrow">DOCUMENT UTILITY</p><h1>Payment Slip Generator</h1><p>Upload your FORM-XVII Excel file. We group every employee by Work Order and create ready-to-download PDFs.</p></section><section className="card"><h2>1. Upload your Excel file</h2><input ref={input} className="sr" id="upload" type="file" accept=".xlsx,.xls" onChange={event => inspect(event.target.files?.[0])}/><label className="dropzone" htmlFor="upload" onDragOver={event => event.preventDefault()} onDrop={event => { event.preventDefault(); inspect(event.dataTransfer.files?.[0]); }}><strong>Drop your Excel file here</strong><span>or choose a .xlsx or .xls file from your computer</span><b>Choose Excel file</b></label>{busy && <p className="status" role="status">Processing your file...</p>}{error && <p className="error" role="alert">{error}</p>}{info && <><div className="summary"><div><strong>{file.name}</strong><span>Excel file ready</span></div><div><strong>{info.records}</strong><span>payment slips found</span></div><div><strong>{info.workOrders}</strong><span>Work Orders found</span></div></div><h2>2. Choose the wording per Work Order</h2><p className="hint">Tick a box only when “Special Reward” should be shown as “Bonus” on that Work Order’s payment slips.</p><div className="orders">{info.orders.map(order => <div className="order" key={order.workOrder}><label><input type="checkbox" checked={Boolean(bonusOrders[order.workOrder])} onChange={event => setBonusOrders({ ...bonusOrders, [order.workOrder]: event.target.checked })}/><span>{order.workOrder}<small>{order.records} payment slips</small></span></label><button disabled={busy} onClick={() => one(order.workOrder)}>Download PDF</button></div>)}</div><h2>3. Generate</h2><button className="primary" disabled={busy} onClick={generate}>Generate Payment Slips and Download ZIP</button></>}</section><footer>Your information is processed only while the file is being generated.</footer></main>;
+  return <main><section className="hero"><p className="eyebrow">DOCUMENT UTILITY</p><h1>Payment Slip Generator</h1><p>Upload your FORM-XVII Excel file. We group every employee by Work Order and create ready-to-download PDFs.</p></section><section className="card"><h2>1. Upload your Excel file</h2><input ref={input} className="sr" id="upload" type="file" accept=".xlsx,.xls" onChange={event => inspect(event.target.files?.[0])}/><label className="dropzone" htmlFor="upload" onDragOver={event => event.preventDefault()} onDrop={event => { event.preventDefault(); inspect(event.dataTransfer.files?.[0]); }}><strong>Drop your Excel file here</strong><span>or choose a .xlsx or .xls file from your computer</span><b>Choose Excel file</b></label>{busy && <p className="status" role="status">Processing your file...</p>}{error && <p className="error" role="alert">{error}</p>}{info && <><div className="summary"><div><strong>{file.name}</strong><span>Excel file ready</span></div><div><strong>{info.records}</strong><span>payment slips found</span></div><div><strong>{info.workOrders}</strong><span>Work Orders found</span></div></div><h2>2. Choose the wording per Work Order</h2><p className="hint">Tick a box only when Special Reward should be shown as Bonus on that Work Order’s payment slips.</p><div className="orders">{info.orders.map(order => <div className="order" key={order.workOrder}><label><input type="checkbox" checked={Boolean(bonusOrders[order.workOrder])} onChange={event => { setBonusOrders({ ...bonusOrders, [order.workOrder]: event.target.checked }); setZip(); }}/><span>{order.workOrder}<small>{order.records} payment slips</small></span></label><button disabled={busy} onClick={() => one(order.workOrder)}>Download PDF</button></div>)}</div><h2>3. Generate and download</h2><button className="primary" disabled={busy} onClick={generate}>Generate Payment Slips</button>{zip && <button className="primary download-zip" onClick={() => download(zip, 'payment_slips.zip')}>Download ZIP</button>}</>}</section><footer>Your information is processed only while the file is being generated.</footer></main>;
 }
 
 createRoot(document.getElementById('root')).render(<StrictMode><App /></StrictMode>);

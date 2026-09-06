@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 import io
+import json
 import re
 import zipfile
 from collections import defaultdict
 from pathlib import Path
 
-from fastapi import FastAPI, File, HTTPException, Query, UploadFile
+from fastapi import FastAPI, File, Form, HTTPException, Query, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
 from fastapi.staticfiles import StaticFiles
@@ -37,11 +38,12 @@ def as_error(error: ValidationError) -> HTTPException:
     return HTTPException(422, {"message": error.message, "rows": error.rows})
 
 
-def make_outputs(slips: list[PaymentSlip]) -> dict[str, bytes]:
+def make_outputs(slips: list[PaymentSlip], bonus_work_orders: set[str] | None = None) -> dict[str, bytes]:
+    bonus_work_orders = bonus_work_orders or set()
     grouped: dict[str, list[PaymentSlip]] = defaultdict(list)
     for slip in slips:
         grouped[slip.work_order].append(slip)
-    return {work_order: build_work_order_pdf(records) for work_order, records in grouped.items()}
+    return {work_order: build_work_order_pdf(records, "Bonus" if work_order in bonus_work_orders else "Special Reward") for work_order, records in grouped.items()}
 
 
 @app.post("/api/inspect")
@@ -59,14 +61,18 @@ async def inspect(file: UploadFile = File(...)):
 
 
 @app.post("/api/generate")
-async def generate(file: UploadFile = File(...)):
+async def generate(file: UploadFile = File(...), bonus_work_orders: str = Form("[]")):
     content = await file.read()
     check_file(file, content)
     try:
         slips = parse_workbook(content)
     except ValidationError as error:
         raise as_error(error)
-    outputs = make_outputs(slips)
+    try:
+        bonus_orders = set(json.loads(bonus_work_orders))
+    except (TypeError, json.JSONDecodeError):
+        raise HTTPException(400, "The selected Bonus Work Orders are invalid.")
+    outputs = make_outputs(slips, bonus_orders)
     archive = io.BytesIO()
     with zipfile.ZipFile(archive, "w", zipfile.ZIP_DEFLATED) as zip_file:
         for work_order, pdf in sorted(outputs.items()):
@@ -75,7 +81,7 @@ async def generate(file: UploadFile = File(...)):
 
 
 @app.post("/api/work-order-pdf")
-async def work_order_pdf(work_order: str = Query(...), file: UploadFile = File(...)):
+async def work_order_pdf(work_order: str = Query(...), use_bonus: bool = Form(False), file: UploadFile = File(...)):
     content = await file.read()
     check_file(file, content)
     try:
@@ -85,7 +91,7 @@ async def work_order_pdf(work_order: str = Query(...), file: UploadFile = File(.
     if not slips:
         raise HTTPException(404, "That Work Order was not found in this file.")
     filename = f"{safe_filename(work_order)}.pdf"
-    return Response(build_work_order_pdf(slips), media_type="application/pdf", headers={"Content-Disposition": f'attachment; filename="{filename}"'})
+    return Response(build_work_order_pdf(slips, "Bonus" if use_bonus else "Special Reward"), media_type="application/pdf", headers={"Content-Disposition": f'attachment; filename="{filename}"'})
 
 
 def safe_filename(value: str) -> str:

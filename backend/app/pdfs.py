@@ -59,7 +59,7 @@ def fit_text(text, font, size, max_width):
     return text + ell
 
 
-def draw_slip(c: canvas.Canvas, slip: PaymentSlip, top_y: float, slot_height: float):
+def draw_slip(c: canvas.Canvas, slip: PaymentSlip, top_y: float, slot_height: float, reward_label: str):
     """Draw one wage slip inside the box [top_y - slot_height, top_y]."""
     width, _ = A4
     margin = PAGE_MARGIN
@@ -110,7 +110,7 @@ def draw_slip(c: canvas.Canvas, slip: PaymentSlip, top_y: float, slot_height: fl
     c.setFont("Helvetica-Bold", 10.5)
     c.drawString(x, y, "5. Pay")
     draw_label_value(c, x + 46, y, "a. Basic Wages: ", currency(slip.basic_wages))
-    draw_label_value(c, x + 225, y, "b. Special Reward: ", currency(slip.special_reward))
+    draw_label_value(c, x + 225, y, f"b. {reward_label}: ", currency(slip.special_reward))
     draw_label_value_right(c, right_edge, y, "c. Total: ", currency(slip.total_pay))
     y -= 18
 
@@ -142,7 +142,7 @@ def draw_slip(c: canvas.Canvas, slip: PaymentSlip, top_y: float, slot_height: fl
     )
 
 
-def build_work_order_pdf(slips: list[PaymentSlip]) -> bytes:
+def build_work_order_pdf(slips: list[PaymentSlip], reward_label: str = "Special Reward") -> bytes:
     buffer = io.BytesIO()
     pdf = canvas.Canvas(buffer, pagesize=A4, pageCompression=1)
     pdf.setTitle(f"Payment slips - {slips[0].work_order}")
@@ -157,7 +157,7 @@ def build_work_order_pdf(slips: list[PaymentSlip]) -> bytes:
             pdf.showPage()
 
         top_y = height - PAGE_MARGIN - pos * (slot_height + SLIP_GAP)
-        draw_slip(pdf, slip, top_y, slot_height)
+        draw_slip(pdf, slip, top_y, slot_height, reward_label)
 
     pdf.showPage()
     pdf.save()
